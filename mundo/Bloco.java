@@ -2,7 +2,8 @@ package mundo;
 
 public enum Bloco {
     CHAO("."),
-    PAREDE("#");
+    PAREDE("#"),
+    ESCADA("D"); // Stairs to next level
 
     public final String simbolo;
 

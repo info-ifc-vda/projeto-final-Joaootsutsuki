@@ -16,14 +16,12 @@ public class Monstro extends Entidade {
         String RESET = "\u001B[0m";
 
         return new String[][] {
-                { cor + simbolo + RESET, cor + simbolo + RESET, cor + simbolo + RESET },
-                { cor + simbolo + RESET, cor + simbolo + RESET, cor + simbolo + RESET },
-                { cor + simbolo + RESET, cor + simbolo + RESET, cor + simbolo + RESET }
+                { cor + simbolo + RESET, cor + simbolo + RESET },
+                { cor + simbolo + RESET, cor + simbolo + RESET }
         };
     }
 
     // monstro estatico
     public void moverAleatorio(Mapa mapa) {
-        // 
     }
 }

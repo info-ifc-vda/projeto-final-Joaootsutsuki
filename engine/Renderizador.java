@@ -3,13 +3,35 @@ package engine;
 import mundo.Mapa;
 import entidades.Entidade;
 import entidades.Jogador;
+import items.Chest;
 import java.util.List;
 
 public class Renderizador {
 
-    public static void renderizar(Mapa mapa, Jogador jogador, MessageLog log, Entidade... outrasEntidades) {
+    public static void renderizar(Mapa mapa, Jogador jogador, MessageLog log, List<Chest> chests,
+            Entidade... outrasEntidades) {
         String[][] tela = mapa.comoArrayString();
 
+        // render chests first
+        for (Chest chest : chests) {
+            if (!chest.isOpened()) {
+                String[][] s = chest.sprite();
+                int baseX = chest.posicao().x();
+                int baseY = chest.posicao().y();
+
+                for (int sy = 0; sy < s.length; sy++) {
+                    for (int sx = 0; sx < s[0].length; sx++) {
+                        int tx = baseX + sx;
+                        int ty = baseY + sy;
+
+                        if (tx >= 0 && ty >= 0 && ty < tela.length && tx < tela[0].length)
+                            tela[ty][tx] = s[sy][sx];
+                    }
+                }
+            }
+        }
+
+        // render entities
         Entidade[] todasEntidades = new Entidade[outrasEntidades.length + 1];
         todasEntidades[0] = jogador;
         System.arraycopy(outrasEntidades, 0, todasEntidades, 1, outrasEntidades.length);
@@ -72,17 +94,25 @@ public class Renderizador {
         sb.append(String.format("Nivel: %d\n", jogador.nivel()));
         sb.append("─".repeat(25) + "\n");
 
-        // HP bar
+        // Barra de HP
         String hpBar = gerarBarra(jogador.hpAtual(), jogador.hpMax(), 15, RED);
         sb.append(String.format("HP: %s %d/%d\n", hpBar, jogador.hpAtual(), jogador.hpMax()));
 
-        // MP bar
+        // Barra de Mana
         String manaBar = gerarBarra(jogador.manaAtual(), jogador.manaMax(), 15, CYAN);
         sb.append(String.format("MP: %s %d/%d\n", manaBar, jogador.manaAtual(), jogador.manaMax()));
 
         sb.append("─".repeat(25) + "\n");
         sb.append(String.format("ATK: %d   DEF: %d\n", jogador.ataque(), jogador.defesa()));
         sb.append(String.format("XP:  %d\n", jogador.xp()));
+
+        // Show equipped weapon
+        if (jogador.inventory().getEquippedWeapon() != null) {
+            sb.append("\n");
+            sb.append(String.format("%sEquipped:%s\n", YELLOW, RESET));
+            sb.append(String.format("%s\n", jogador.inventory().getEquippedWeapon().toString()));
+        }
+
         sb.append("\n");
 
         sb.append(String.format("%s=== INIMIGOS ===%s\n", YELLOW, RESET));
