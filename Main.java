@@ -1,8 +1,8 @@
-import engine.Jogo;
+import engine.Game;
 
 public class Main {
     public static void main(String[] args) {
-        Jogo jogo = new Jogo();
-        jogo.iniciar();
+        Game game = new Game();
+        game.start();
     }
 }

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class Jogo {
+public class Game {
     private Dungeon dungeon;
     private Jogador jogador;
     private MessageLog log;
@@ -20,7 +20,7 @@ public class Jogo {
     private Chest currentChest;
     private Random rand;
 
-    public void iniciar() {
+    public void start() {
         rand = new Random();
         log = new MessageLog();
         showingInventory = false;
@@ -663,8 +663,7 @@ public class Jogo {
         System.out.println();
         System.out.println("Press Q to quit...");
 
-        while (Input.getKey() != 'q')
-            ;
+        while (Input.getKey() != 'q');
         Input.cleanup();
         System.exit(0);
     }
