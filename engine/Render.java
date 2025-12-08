@@ -1,8 +1,8 @@
 package engine;
 
-import mundo.Mapa;
-import entidades.Entidade;
-import entidades.Jogador;
+import mundo.Map;
+import entidades.Entity;
+import entidades.Player;
 import items.Chest;
 import java.util.List;
 
@@ -13,16 +13,15 @@ public class Render {
 
     private static StringBuilder frameBuffer = new StringBuilder(5000);
 
-    public static void render(Mapa mapa, Jogador player, MessageLog log, List<Chest> chests, Entidade... others) {
+    public static void render(Map map, Player player, MessageLog log, List<Chest> chests, Entity... others) {
         frameBuffer.setLength(0);
 
         frameBuffer.append(ANSI_HIDE_CURSOR);
         frameBuffer.append(ANSI_CLEAR);
 
-        String[][] screen = mapa.comoArrayString();
+        String[][] screen = map.asStringArray();
 
         renderChests(screen, chests);
-
         renderEntities(screen, player, others);
 
         String sidebar = generateSidebar(player, others);
@@ -41,14 +40,13 @@ public class Render {
         }
 
         frameBuffer.append("=".repeat(90)).append("\n");
-
         renderLog(log);
 
         System.out.print(frameBuffer.toString());
         System.out.flush();
     }
 
-    private static String generateSidebar(Jogador player, Entidade... enemies) {
+    private static String generateSidebar(Player player, Entity... enemies) {
         StringBuilder sb = new StringBuilder();
 
         String CYAN = "\u001B[36m";
@@ -58,17 +56,17 @@ public class Render {
         String RESET = "\u001B[0m";
 
         // Player info
-        sb.append(String.format("%s%s%s\n", CYAN, player.nome(), RESET));
-        sb.append(String.format("Level: %d\n", player.nivel()));
+        sb.append(String.format("%s%s%s\n", CYAN, player.name(), RESET));
+        sb.append(String.format("Level: %d\n", player.level()));
         sb.append("─".repeat(25)).append("\n");
 
         // HP Bar
-        String hpBar = generateBar(player.hpAtual(), player.hpMax(), 15, RED);
-        sb.append(String.format("HP: %s %d/%d\n", hpBar, player.hpAtual(), player.hpMax()));
+        String hpBar = generateBar(player.currentHp(), player.maxHp(), 15, RED);
+        sb.append(String.format("HP: %s %d/%d\n", hpBar, player.currentHp(), player.maxHp()));
 
         // Mana Bar
-        String manaBar = generateBar(player.manaAtual(), player.manaMax(), 15, CYAN);
-        sb.append(String.format("MP: %s %d/%d\n", manaBar, player.manaAtual(), player.manaMax()));
+        String manaBar = generateBar(player.currentMana(), player.maxMana(), 15, CYAN);
+        sb.append(String.format("MP: %s %d/%d\n", manaBar, player.currentMana(), player.maxMana()));
 
         sb.append("─".repeat(25)).append("\n");
 
@@ -84,29 +82,18 @@ public class Render {
         // Weight
         double currentWeight = player.inventory().getCurrentWeight();
         int maxWeight = player.stats().maxCarryWeight();
-        sb.append(String.format("Weight: %.1f/%d\n", currentWeight, maxWeight));
-        sb.append(String.format("XP: %d\n", player.xp()));
+        String weightBar = generateBar((int) currentWeight, maxWeight, 15, GREEN);
+        sb.append(String.format("Weight: %s %.1f/ %d\n", weightBar, currentWeight, maxWeight));
 
-        // Equipped weapon
-        if (player.inventory().getEquippedWeapon() != null) {
-            sb.append("\n");
-            sb.append(String.format("%sEquipped:%s\n", YELLOW, RESET));
-            sb.append(String.format("%s\n", player.inventory().getEquippedWeapon().name()));
-        }
-
-        sb.append("\n");
+        sb.append("─".repeat(25)).append("\n");
 
         // Enemies
-        sb.append(String.format("%s=== ENEMIES ===%s\n", YELLOW, RESET));
         boolean hasEnemy = false;
-
-        for (Entidade enemy : enemies) {
-            if (enemy.vivo()) {
-                String enemyHpBar = generateBar(enemy.hpAtual(), enemy.hpMax(), 12, RED);
-                sb.append(String.format("%s%s%s\n", GREEN, enemy.nome(), RESET));
-                sb.append(String.format("HP: %s %d/%d\n", enemyHpBar, enemy.hpAtual(), enemy.hpMax()));
-                sb.append("\n");
+        for (Entity e : enemies) {
+            if (e.alive()) {
                 hasEnemy = true;
+                String enemyHpBar = generateBar(e.currentHp(), e.maxHp(), 10, RED);
+                sb.append(String.format("%s [%s %d/%d]\n", e.name(), enemyHpBar, e.currentHp(), e.maxHp()));
             }
         }
 
@@ -126,7 +113,6 @@ public class Render {
             bar.append(i < filled ? "█" : "░");
         }
         bar.append(RESET);
-
         return bar.toString();
     }
 
@@ -141,7 +127,6 @@ public class Render {
                     for (int sx = 0; sx < sprite[0].length; sx++) {
                         int tx = baseX + sx;
                         int ty = baseY + sy;
-
                         if (isValidPosition(tx, ty, screen)) {
                             screen[ty][tx] = sprite[sy][sx];
                         }
@@ -151,13 +136,14 @@ public class Render {
         }
     }
 
-    private static void renderEntities(String[][] screen, Jogador player, Entidade... others) {
-        Entidade[] allEntities = new Entidade[others.length + 1];
+    private static void renderEntities(String[][] screen, Player player, Entity... others) {
+        Entity[] allEntities = new Entity[others.length + 1];
         allEntities[0] = player;
         System.arraycopy(others, 0, allEntities, 1, others.length);
 
-        for (Entidade entity : allEntities) {
-            if (!entity.vivo()) continue;
+        for (Entity entity : allEntities) {
+            if (!entity.alive())
+                continue;
 
             String[][] sprite = entity.sprite();
             int baseX = entity.position().x();
@@ -167,7 +153,6 @@ public class Render {
                 for (int sx = 0; sx < sprite[0].length; sx++) {
                     int tx = baseX + sx;
                     int ty = baseY + sy;
-
                     if (isValidPosition(tx, ty, screen)) {
                         screen[ty][tx] = sprite[sy][sx];
                     }
@@ -178,9 +163,9 @@ public class Render {
 
     private static void renderLog(MessageLog log) {
         for (String msg : log.getMessages()) {
-            frameBuffer.append(msg).append("\n"); // ← adiciona \n no final de cada linha
+            frameBuffer.append(msg).append("\n");
         }
-        frameBuffer.append("\n"); // linha em branco extra pra ficar bonito
+        frameBuffer.append("\n");
     }
 
     private static boolean isValidPosition(int x, int y, String[][] screen) {

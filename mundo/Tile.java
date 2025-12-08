@@ -1,19 +1,19 @@
 package mundo;
 
-public enum Bloco {
-    CHAO("."),
-    PAREDE("#"),
-    STAIRS_DOWN("↓"),
-    STAIRS_UP("↑"),
+public enum Tile {
+    FLOOR("."),
+    WALL("#"),
+    STAIRS_DOWN("down"),
+    STAIRS_UP("up"),
     DOOR_NORTH("^"),
     DOOR_SOUTH("v"),
     DOOR_EAST(">"),
     DOOR_WEST("<");
 
-    public final String simbolo;
+    public final String symbol;
 
-    Bloco(String simbolo) {
-        this.simbolo = simbolo;
+    Tile(String symbol) {
+        this.symbol = symbol;
     }
 
     public boolean isDoor() {

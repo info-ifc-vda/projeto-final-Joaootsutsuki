@@ -1,7 +1,7 @@
 package engine;
 
-import entidades.Jogador;
-import entidades.Monstro;
+import entidades.Player;
+import entidades.Monster;
 import items.Chest;
 import items.Weapon;
 import mundo.*;
@@ -11,10 +11,10 @@ import java.util.Random;
 
 public class Game {
     private Dungeon dungeon;
-    private Jogador jogador;
+    private Player player;
     private MessageLog log;
-    private boolean emCombate;
-    private Monstro inimigoAtual;
+    private boolean inCombat;
+    private Monster currentEnemy;
     private boolean showingInventory;
     private boolean showingChestLoot;
     private Chest currentChest;
@@ -31,7 +31,7 @@ public class Game {
 
         // Place player in starting room
         Room startRoom = dungeon.getCurrentLevel().getCurrentRoom();
-        jogador = new Jogador("Hero", startRoom.mapa().posicaoAleatoria());
+        player = new Player("Hero", startRoom.mapa().randomPosition());
 
         // Place stairs in starting room (doors are already set up during map
         // generation)
@@ -44,9 +44,9 @@ public class Game {
             Render.clearScreen();
         }));
 
-        log.adicionar("You enter the dungeon...");
-        log.adicionar("Press [I] inventory, [E] interact, [M] minimap");
-        loopDoJogo();
+        log.add("You enter the dungeon...");
+        log.add("Press [I] inventory, [E] interact, [M] minimap");
+        gameLoop();
     }
 
     private void setupRoom(Room room) {
@@ -60,105 +60,105 @@ public class Game {
             return;
         }
 
-        int qtd = switch (room.type()) {
+        int qty = switch (room.type()) {
             case BOSS -> 1;
             case TREASURE -> 3 + rand.nextInt(2);
             default -> 2 + rand.nextInt(3);
         };
 
-        Mapa mapa = room.mapa();
-        Position playerPos = jogador.position();
+        Map Map = room.mapa();
+        Position playerPos = player.position();
         List<Position> usedPositions = new ArrayList<>();
         
         // divide room into zones to spread monsters
-        int zoneWidth = mapa.getWidth() / 3;
-        int zoneHeight = mapa.getHeight() / 3;
+        int zoneWidth = Map.getWidth() / 3;
+        int zoneHeight = Map.getHeight() / 3;
 
-        for (int i = 0; i < qtd; i++) {
+        for (int i = 0; i < qty; i++) {
             Position pos = null;
-            int tentativas = 0;
-            int maxTentativas = 500;
+            int attempts = 0;
+            int maxAttempts = 500;
             
             // assign each monster to a different zone
             int zoneX = i % 3;
             int zoneY = (i / 3) % 3;
             
             int minX = zoneX * zoneWidth + 2;
-            int maxX = Math.min((zoneX + 1) * zoneWidth - 2, mapa.getWidth() - 3);
+            int maxX = Math.min((zoneX + 1) * zoneWidth - 2, Map.getWidth() - 3);
             int minY = zoneY * zoneHeight + 2;
-            int maxY = Math.min((zoneY + 1) * zoneHeight - 2, mapa.getHeight() - 3);
+            int maxY = Math.min((zoneY + 1) * zoneHeight - 2, Map.getHeight() - 3);
 
-            while (tentativas < maxTentativas && pos == null) {
+            while (attempts < maxAttempts && pos == null) {
                 int randX = minX + rand.nextInt(Math.max(1, maxX - minX));
                 int randY = minY + rand.nextInt(Math.max(1, maxY - minY));
                 
-                Position candidato = new Position(randX, randY);
+                Position candidate = new Position(randX, randY);
                 
-                if (mapa.podeAndar(candidato.x(), candidato.y())) {
-                    double distanciaPlayer = Math.hypot(
-                        candidato.x() - playerPos.x(), 
-                        candidato.y() - playerPos.y()
+                if (Map.canWalk(candidate.x(), candidate.y())) {
+                    double distancePlayer = Math.hypot(
+                        candidate.x() - playerPos.x(), 
+                        candidate.y() - playerPos.y()
                     );
                     
-                    if (distanciaPlayer >= 7) {
+                    if (distancePlayer >= 7) {
                         // check distance from other spawned monsters
-                        boolean livre = true;
-                        for (Position usada : usedPositions) {
+                        boolean free = true;
+                        for (Position used : usedPositions) {
                             double distToOther = Math.hypot(
-                                candidato.x() - usada.x(), 
-                                candidato.y() - usada.y()
+                                candidate.x() - used.x(), 
+                                candidate.y() - used.y()
                             );
                             if (distToOther < 6) {
-                                livre = false;
+                                free = false;
                                 break;
                             }
                         }
                         
-                        if (livre) {
-                            pos = candidato;
+                        if (free) {
+                            pos = candidate;
                         }
                     }
                 }
-                tentativas++;
+                attempts++;
             }
 
             // fallback
             if (pos == null) {
-                tentativas = 0;
-                while (tentativas < 200 && pos == null) {
+                attempts = 0;
+                while (attempts < 200 && pos == null) {
                     int randX = minX + rand.nextInt(Math.max(1, maxX - minX));
                     int randY = minY + rand.nextInt(Math.max(1, maxY - minY));
                     
-                    Position candidato = new Position(randX, randY);
-                    if (mapa.podeAndar(candidato.x(), candidato.y())) {
-                        boolean livre = true;
-                        for (Position usada : usedPositions) {
+                    Position candidate = new Position(randX, randY);
+                    if (Map.canWalk(candidate.x(), candidate.y())) {
+                        boolean free = true;
+                        for (Position used : usedPositions) {
                             double distToOther = Math.hypot(
-                                candidato.x() - usada.x(), 
-                                candidato.y() - usada.y()
+                                candidate.x() - used.x(), 
+                                candidate.y() - used.y()
                             );
                             if (distToOther < 3) {
-                                livre = false;
+                                free = false;
                                 break;
                             }
                         }
-                        if (livre) {
-                            pos = candidato;
+                        if (free) {
+                            pos = candidate;
                         }
                     }
-                    tentativas++;
+                    attempts++;
                 }
             }
 
             // Last resort
             if (pos == null) {
-                pos = mapa.posicaoAleatoria();
+                pos = Map.randomPosition();
             }
 
             usedPositions.add(pos);
 
             boolean boss = room.type() == Room.RoomType.BOSS;
-            Monstro m = new Monstro(
+            Monster m = new Monster(
                     boss ? "Boss Goblin King" : "Goblin",
                     "G",
                     boss ? "\u001B[31m" : "\u001B[32m",
@@ -170,58 +170,58 @@ public class Game {
         }
     }
 
-    private Position encontrarPosicaoValida(Mapa mapa, List<Position> posicoesUsadas, int distanciaMinima) {
-        int tentativas = 0;
+    private Position findValidPosition(Map Map, List<Position> usedPositions, int minimumDistance) {
+        int attempts = 0;
 
-        while (tentativas < 100) {
-            Position novaPosicao = mapa.posicaoAleatoriaLongeDoJogador(jogador.position(), distanciaMinima);
+        while (attempts < 100) {
+            Position newPosition = Map.randomPositionFarFromPlayer(player.position(), minimumDistance);
 
-            boolean muitoPerto = false;
-            for (Position usada : posicoesUsadas) {
-                double dist = Math.sqrt(Math.pow(novaPosicao.x() - usada.x(), 2) +
-                        Math.pow(novaPosicao.y() - usada.y(), 2));
-                if (dist < distanciaMinima) {
-                    muitoPerto = true;
+            boolean tooClose = false;
+            for (Position used : usedPositions) {
+                double dist = Math.sqrt(Math.pow(newPosition.x() - used.x(), 2) +
+                        Math.pow(newPosition.y() - used.y(), 2));
+                if (dist < minimumDistance) {
+                    tooClose = true;
                     break;
                 }
             }
 
-            if (!muitoPerto) {
-                return novaPosicao;
+            if (!tooClose) {
+                return newPosition;
             }
 
-            tentativas++;
+            attempts++;
         }
 
-        return mapa.posicaoAleatoriaLongeDoJogador(jogador.position(), 5);
+        return Map.randomPositionFarFromPlayer(player.position(), 5);
     }
 
-    private void loopDoJogo() {
-        while (jogador.vivo()) {
+    private void gameLoop() {
+        while (player.alive()) {
             try {
                 Render.clearScreen();
 
                 if (showingInventory) {
-                    mostrarInventario();
+                    showInventory();
                 } else if (showingChestLoot) {
-                    mostrarBauLoot();
+                    showChestLoot();
                 } else {
                     Room currentRoom = dungeon.getCurrentLevel().getCurrentRoom();
-                    Monstro[] arrayMonstros = currentRoom.monstros().toArray(new Monstro[0]);
-                    Render.render(currentRoom.mapa(), jogador, log,
-                            currentRoom.chests(), arrayMonstros);
+                    Monster[] arrayMonsters = currentRoom.monstros().toArray(new Monster[0]);
+                    Render.render(currentRoom.mapa(), player, log,
+                            currentRoom.chests(), arrayMonsters);
                 }
 
-                char tecla = Input.getKey();
+                char key = Input.getKey();
 
                 if (showingInventory) {
-                    processarInventario(tecla);
+                    processInventory(key);
                 } else if (showingChestLoot) {
-                    processarBauLoot(tecla);
-                } else if (emCombate) {
-                    processarCombate(tecla);
+                    processChestLoot(key);
+                } else if (inCombat) {
+                    processCombat(key);
                 } else {
-                    processarMovimento(tecla);
+                    processMovement(key);
                 }
             } catch (Exception e) {
                 System.err.println("ERROR: " + e.getMessage());
@@ -234,20 +234,20 @@ public class Game {
         gameOver();
     }
 
-    private void mostrarInventario() {
+    private void showInventory() {
         System.out.println("╔══════════════════════════════════════════════════════════════╗");
         System.out.println("║                         INVENTORY                            ║");
         System.out.println("╚══════════════════════════════════════════════════════════════╝");
         System.out.println();
 
-        if (jogador.inventory().size() == 0) {
+        if (player.inventory().size() == 0) {
             System.out.println("  Your inventory is empty.");
         } else {
             System.out.println("  Press number to equip weapon, [I] to close");
             System.out.println();
 
-            List<Weapon> weapons = jogador.inventory().getWeapons();
-            Weapon equipped = jogador.inventory().getEquippedWeapon();
+            List<Weapon> weapons = player.inventory().getWeapons();
+            Weapon equipped = player.inventory().getEquippedWeapon();
 
             for (int i = 0; i < weapons.size(); i++) {
                 Weapon w = weapons.get(i);
@@ -255,9 +255,9 @@ public class Game {
                 String color = getRarityColor(w.rarity());
 
                 int actualDamage = w.getDamageWithStats(
-                        jogador.stats().strength(),
-                        jogador.stats().dexterity(),
-                        jogador.stats().intelligence());
+                        player.stats().strength(),
+                        player.stats().dexterity(),
+                        player.stats().intelligence());
 
                 System.out.printf("  [%d] %s%-35s%s Lv.%-2d [%d→%d DMG] <%s> %.1fkg%s\n",
                         i + 1, color, w.name(), "\u001B[0m", w.level(),
@@ -269,7 +269,7 @@ public class Game {
         System.out.println("─".repeat(64));
     }
 
-    private void mostrarBauLoot() {
+    private void showChestLoot() {
         System.out.println("╔══════════════════════════════════════════════════════════════╗");
         String title = currentChest.corpseName();
         int padding = (62 - title.length()) / 2;
@@ -290,9 +290,9 @@ public class Game {
         System.out.println();
         System.out.println("─".repeat(64));
         System.out.printf("Inventory: %d/20 | Weight: %.1f/%d\n",
-                jogador.inventory().size(),
-                jogador.inventory().getCurrentWeight(),
-                jogador.stats().maxCarryWeight());
+                player.inventory().size(),
+                player.inventory().getCurrentWeight(),
+                player.stats().maxCarryWeight());
     }
 
     private String getRarityColor(String rarity) {
@@ -305,42 +305,42 @@ public class Game {
         };
     }
 
-    private void processarInventario(char tecla) {
-        if (tecla == 'i') {
+    private void processInventory(char key) {
+        if (key == 'i') {
             showingInventory = false;
             return;
         }
 
-        if (tecla >= '1' && tecla <= '9') {
-            int index = tecla - '1';
-            if (index < jogador.inventory().size()) {
-                jogador.inventory().equipWeapon(index);
-                log.adicionar("Equipped: " + jogador.inventory().getEquippedWeapon().name());
+        if (key >= '1' && key <= '9') {
+            int index = key - '1';
+            if (index < player.inventory().size()) {
+                player.inventory().equipWeapon(index);
+                log.add("Equipped: " + player.inventory().getEquippedWeapon().name());
             }
         }
     }
 
-    private void processarBauLoot(char tecla) {
-        if (tecla == 'e') {
+    private void processChestLoot(char key) {
+        if (key == 'e') {
             showingChestLoot = false;
             currentChest = null;
             return;
         }
 
-        if (tecla >= '1' && tecla <= '9') {
-            int index = tecla - '1';
+        if (key >= '1' && key <= '9') {
+            int index = key - '1';
             if (index < currentChest.weapons().size()) {
-                double maxWeight = jogador.stats().maxCarryWeight();
+                double maxWeight = player.stats().maxCarryWeight();
                 Weapon toTake = currentChest.weapons().get(index);
 
-                if (jogador.inventory().isFull()) {
-                    log.adicionar("Inventory is full!");
-                } else if (jogador.inventory().getCurrentWeight() + toTake.weight() > maxWeight) {
-                    log.adicionar("Too heavy! Need more endurance");
+                if (player.inventory().isFull()) {
+                    log.add("Inventory is full!");
+                } else if (player.inventory().getCurrentWeight() + toTake.weight() > maxWeight) {
+                    log.add("Too heavy! Need more endurance");
                 } else {
                     Weapon taken = currentChest.weapons().remove(index);
-                    jogador.inventory().addWeapon(taken, maxWeight);
-                    log.adicionar("Took: " + taken.name());
+                    player.inventory().addWeapon(taken, maxWeight);
+                    log.add("Took: " + taken.name());
 
                     if (currentChest.weapons().isEmpty()) {
                         currentChest.open();
@@ -352,28 +352,28 @@ public class Game {
         }
     }
 
-    private void processarMovimento(char tecla) {
+    private void processMovement(char key) {
         Room currentRoom = dungeon.getCurrentLevel().getCurrentRoom();
-        Mapa mapa = currentRoom.mapa();
+        Map Map = currentRoom.mapa();
 
-        int oldX = jogador.position().x();
-        int oldY = jogador.position().y();
+        int oldX = player.position().x();
+        int oldY = player.position().y();
 
-        switch (tecla) {
-            case 'w' -> jogador.mover(0, -1, mapa);
-            case 's' -> jogador.mover(0, 1, mapa);
-            case 'a' -> jogador.mover(-1, 0, mapa);
-            case 'd' -> jogador.mover(1, 0, mapa);
+        switch (key) {
+            case 'w' -> player.move(0, -1, Map);
+            case 's' -> player.move(0, 1, Map);
+            case 'a' -> player.move(-1, 0, Map);
+            case 'd' -> player.move(1, 0, Map);
             case 'i' -> {
                 showingInventory = true;
                 return;
             }
             case 'e' -> {
-                verificarBau(currentRoom);
+                checkChest(currentRoom);
                 return;
             }
             case 'm' -> {
-                mostrarMiniMapa();
+                showMinimap();
                 Input.getKey();
                 return;
             }
@@ -384,25 +384,25 @@ public class Game {
         }
         checkForRoomChange();
 
-        if (jogador.position().x() != oldX || jogador.position().y() != oldY) {
-            verificarEscada();
-            verificarTransicaoSala();
-            verificarColisao(currentRoom);
+        if (player.position().x() != oldX || player.position().y() != oldY) {
+            checkStairs();
+            checkRoomTransition();
+            checkCollision(currentRoom);
             currentRoom.checkCleared();
         }
     }
 
     private void checkForRoomChange() {
-        Room salaAtual = dungeon.getCurrentLevel().getCurrentRoom();
-        Mapa mapa = salaAtual.mapa();
-        Position p = jogador.position();
+        Room currentRoom = dungeon.getCurrentLevel().getCurrentRoom();
+        Map Map = currentRoom.mapa();
+        Position p = player.position();
 
         // Safety check
-        if (p.y() < 0 || p.x() < 0 || p.y() >= mapa.getHeight() || p.x() >= mapa.getWidth()) {
+        if (p.y() < 0 || p.x() < 0 || p.y() >= Map.getHeight() || p.x() >= Map.getWidth()) {
             return;
         }
 
-        Bloco tile = mapa.getTile(p.y(), p.x());
+        Tile tile = Map.getTile(p.y(), p.x());
 
         // Only continue if standing on a door
         if (!tile.isDoor()) {
@@ -410,66 +410,66 @@ public class Game {
         }
 
         DungeonLevel level = dungeon.getCurrentLevel();
-        Bloco doorEntered = tile;
-        boolean mudou = false;
+        Tile doorEntered = tile;
+        boolean changed = false;
 
-        if (tile == Bloco.DOOR_NORTH && level.canMoveNorth()) {
+        if (tile == Tile.DOOR_NORTH && level.canMoveNorth()) {
             level.moveNorth();
-            mudou = true;
+            changed = true;
         }
-        if (tile == Bloco.DOOR_SOUTH && level.canMoveSouth()) {
+        if (tile == Tile.DOOR_SOUTH && level.canMoveSouth()) {
             level.moveSouth();
-            mudou = true;
+            changed = true;
         }
-        if (tile == Bloco.DOOR_EAST && level.canMoveEast()) {
+        if (tile == Tile.DOOR_EAST && level.canMoveEast()) {
             level.moveEast();
-            mudou = true;
+            changed = true;
         }
-        if (tile == Bloco.DOOR_WEST && level.canMoveWest()) {
+        if (tile == Tile.DOOR_WEST && level.canMoveWest()) {
             level.moveWest();
-            mudou = true;
+            changed = true;
         }
 
-        if (!mudou) {
+        if (!changed) {
             return;
         }
 
-        Room novaSala = level.getCurrentRoom();
-        Mapa novaMapa = novaSala.mapa();
+        Room newRoom = level.getCurrentRoom();
+        Map newMap = newRoom.mapa();
 
         // 1. FIRST spawn player near opposite door
-        Position novaPos = getSpawnPositionFromDoor(doorEntered, novaMapa);
-        jogador.setPosition(novaPos);
+        Position newPos = getSpawnPositionFromDoor(doorEntered, newMap);
+        player.setPosition(newPos);
 
         // 2. THEN check if room needs monsters spawned
-        if (!novaSala.discovered()) {
-            novaSala.setDiscovered(true);
-            spawnMonstersInRoom(novaSala, dungeon.getCurrentFloorNumber());
-            log.adicionar("You entered a new room!");
+        if (!newRoom.discovered()) {
+            newRoom.setDiscovered(true);
+            spawnMonstersInRoom(newRoom, dungeon.getCurrentFloorNumber());
+            log.add("You entered a new room!");
         } else {
-            log.adicionar("You entered a cleared room.");
+            log.add("You entered a cleared room.");
         }
     }
 
-    private Position getSpawnPositionFromDoor(Bloco doorEntered, Mapa mapa) {
-        int centerX = mapa.getWidth() / 2;
-        int centerY = mapa.getHeight() / 2;
+    private Position getSpawnPositionFromDoor(Tile doorEntered, Map Map) {
+        int centerX = Map.getWidth() / 2;
+        int centerY = Map.getHeight() / 2;
 
         // Spawn near the opposite door
         return switch (doorEntered) {
-            case DOOR_NORTH -> findSafeSpawnNear(mapa, centerX, mapa.getHeight() - 5); // Came from north, spawn near
+            case DOOR_NORTH -> findSafeSpawnNear(Map, centerX, Map.getHeight() - 5); // Came from north, spawn near
                                                                                        // south
-            case DOOR_SOUTH -> findSafeSpawnNear(mapa, centerX, 5); // Came from south, spawn near north
-            case DOOR_EAST -> findSafeSpawnNear(mapa, 5, centerY); // Came from east, spawn near west
-            case DOOR_WEST -> findSafeSpawnNear(mapa, mapa.getWidth() - 5, centerY); // Came from west, spawn near east
-            default -> mapa.posicaoAleatoria();
+            case DOOR_SOUTH -> findSafeSpawnNear(Map, centerX, 5); // Came from south, spawn near north
+            case DOOR_EAST -> findSafeSpawnNear(Map, 5, centerY); // Came from east, spawn near west
+            case DOOR_WEST -> findSafeSpawnNear(Map, Map.getWidth() - 5, centerY); // Came from west, spawn near east
+            default -> Map.randomPosition();
         };
     }
 
-    private void verificarEscada() {
-        Position pos = jogador.position();
+    private void checkStairs() {
+        Position pos = player.position();
         Room currentRoom = dungeon.getCurrentLevel().getCurrentRoom();
-        Mapa mapa = currentRoom.mapa();
+        Map Map = currentRoom.mapa();
 
         // Check all 4 tiles of player sprite for stairs
         for (int dy = 0; dy < 2; dy++) {
@@ -477,13 +477,13 @@ public class Game {
                 int checkX = pos.x() + dx;
                 int checkY = pos.y() + dy;
 
-                if (mapa.isStairs(checkX, checkY)) {
-                    Bloco stairsType = mapa.getStairsType(checkX, checkY);
+                if (Map.isStairs(checkX, checkY)) {
+                    Tile stairsType = Map.getStairsType(checkX, checkY);
 
-                    if (stairsType == Bloco.STAIRS_DOWN) {
+                    if (stairsType == Tile.STAIRS_DOWN) {
                         dungeon.descendFloor();
-                        log.limpar();
-                        log.adicionar("Descended to Floor " + dungeon.getCurrentFloorNumber());
+                        log.clear();
+                        log.add("Descended to Floor " + dungeon.getCurrentFloorNumber());
 
                         // Setup new floor's starting room
                         Room newRoom = dungeon.getCurrentLevel().getCurrentRoom();
@@ -493,20 +493,20 @@ public class Game {
                         }
 
                         // Move player to stairs up position
-                        Position newPos = newRoom.mapa().posicaoAleatoria();
-                        jogador.mover(newPos.x() - jogador.position().x(),
-                                newPos.y() - jogador.position().y(), newRoom.mapa());
+                        Position newPos = newRoom.mapa().randomPosition();
+                        player.move(newPos.x() - player.position().x(),
+                                newPos.y() - player.position().y(), newRoom.mapa());
 
-                    } else if (stairsType == Bloco.STAIRS_UP) {
+                    } else if (stairsType == Tile.STAIRS_UP) {
                         dungeon.ascendFloor();
-                        log.limpar();
-                        log.adicionar("Ascended to Floor " + dungeon.getCurrentFloorNumber());
+                        log.clear();
+                        log.add("Ascended to Floor " + dungeon.getCurrentFloorNumber());
 
                         // Return to previous floor
                         Room oldRoom = dungeon.getCurrentLevel().getCurrentRoom();
-                        Position returnPos = oldRoom.mapa().posicaoAleatoria();
-                        jogador.mover(returnPos.x() - jogador.position().x(),
-                                returnPos.y() - jogador.position().y(), oldRoom.mapa());
+                        Position returnPos = oldRoom.mapa().randomPosition();
+                        player.move(returnPos.x() - player.position().x(),
+                                returnPos.y() - player.position().y(), oldRoom.mapa());
                     }
 
                     return;
@@ -515,10 +515,10 @@ public class Game {
         }
     }
 
-    private void verificarTransicaoSala() {
-        Position pos = jogador.position();
+    private void checkRoomTransition() {
+        Position pos = player.position();
         Room currentRoom = dungeon.getCurrentLevel().getCurrentRoom();
-        Mapa mapa = currentRoom.mapa();
+        Map Map = currentRoom.mapa();
 
         // Check all 4 tiles of player sprite for door collision
         for (int dy = 0; dy < 2; dy++) {
@@ -526,8 +526,8 @@ public class Game {
                 int checkX = pos.x() + dx;
                 int checkY = pos.y() + dy;
 
-                if (mapa.isDoor(checkX, checkY)) {
-                    Bloco doorType = mapa.getDoorType(checkX, checkY);
+                if (Map.isDoor(checkX, checkY)) {
+                    Tile doorType = Map.getDoorType(checkX, checkY);
                     transitionToRoom(doorType);
                     return;
                 }
@@ -535,10 +535,10 @@ public class Game {
         }
     }
 
-    private void transitionToRoom(Bloco doorType) {
+    private void transitionToRoom(Tile doorType) {
         DungeonLevel currentLevel = dungeon.getCurrentLevel();
 
-        log.adicionar("DEBUG: Transitioning room...");
+        log.add("DEBUG: Transitioning room...");
 
         switch (doorType) {
             case DOOR_NORTH -> currentLevel.moveNorth();
@@ -549,48 +549,48 @@ public class Game {
 
         Room newRoom = currentLevel.getCurrentRoom();
 
-        log.adicionar("DEBUG: Room discovered? " + newRoom.discovered());
-        log.adicionar("DEBUG: Room type: " + newRoom.type());
-        log.adicionar("DEBUG: Current monsters: " + newRoom.monstros().size());
+        log.add("DEBUG: Room discovered? " + newRoom.discovered());
+        log.add("DEBUG: Room type: " + newRoom.type());
+        log.add("DEBUG: Current monsters: " + newRoom.monstros().size());
 
         // If entering room for first time, spawn monsters
         if (!newRoom.discovered()) {
             newRoom.setDiscovered(true);
-            log.adicionar("DEBUG: Spawning monsters...");
+            log.add("DEBUG: Spawning monsters...");
             spawnMonstersInRoom(newRoom, dungeon.getCurrentFloorNumber());
-            log.adicionar("DEBUG: After spawn, monsters: " + newRoom.monstros().size());
+            log.add("DEBUG: After spawn, monsters: " + newRoom.monstros().size());
         }
 
         // Place player at opposite door - ensure it's on floor
-        Mapa newMapa = newRoom.mapa();
+        Map newMap = newRoom.mapa();
         Position newPos;
 
         switch (doorType) {
             case DOOR_NORTH -> {
-                newPos = findSafeSpawnNear(newMapa, newMapa.comoArrayString()[0].length / 2,
-                        newMapa.comoArrayString().length - 8);
+                newPos = findSafeSpawnNear(newMap, newMap.asStringArray()[0].length / 2,
+                        newMap.asStringArray().length - 8);
             }
             case DOOR_SOUTH -> {
-                newPos = findSafeSpawnNear(newMapa, newMapa.comoArrayString()[0].length / 2, 8);
+                newPos = findSafeSpawnNear(newMap, newMap.asStringArray()[0].length / 2, 8);
             }
             case DOOR_EAST -> {
-                newPos = findSafeSpawnNear(newMapa, 8, newMapa.comoArrayString().length / 2);
+                newPos = findSafeSpawnNear(newMap, 8, newMap.asStringArray().length / 2);
             }
             case DOOR_WEST -> {
-                newPos = findSafeSpawnNear(newMapa, newMapa.comoArrayString()[0].length - 8,
-                        newMapa.comoArrayString().length / 2);
+                newPos = findSafeSpawnNear(newMap, newMap.asStringArray()[0].length - 8,
+                        newMap.asStringArray().length / 2);
             }
-            default -> newPos = newMapa.posicaoAleatoria();
+            default -> newPos = newMap.randomPosition();
         }
         ;
 
-        jogador.mover(newPos.x() - jogador.position().x(),
-                newPos.y() - jogador.position().y(), newMapa);
+        player.move(newPos.x() - player.position().x(),
+                newPos.y() - player.position().y(), newMap);
 
-        log.adicionar("Entered " + getRoomDescription(newRoom));
+        log.add("Entered " + getRoomDescription(newRoom));
     }
 
-    private Position findSafeSpawnNear(Mapa mapa, int targetX, int targetY) {
+    private Position findSafeSpawnNear(Map Map, int targetX, int targetY) {
         // try to find a walkable 2x2 area near the target position
         for (int radius = 0; radius < 15; radius++) {
             for (int dx = -radius; dx <= radius; dx++) {
@@ -599,8 +599,8 @@ public class Game {
                     int y = targetY + dy;
 
                     // check if this position and the 2x2 area is walkable
-                    if (mapa.podeAndar(x, y) && mapa.podeAndar(x + 1, y) &&
-                            mapa.podeAndar(x, y + 1) && mapa.podeAndar(x + 1, y + 1)) {
+                    if (Map.canWalk(x, y) && Map.canWalk(x + 1, y) &&
+                            Map.canWalk(x, y + 1) && Map.canWalk(x + 1, y + 1)) {
                         return new Position(x, y);
                     }
                 }
@@ -608,7 +608,7 @@ public class Game {
         }
 
         // fallback to random position if no safe spot found
-        return mapa.posicaoAleatoria();
+        return Map.randomPosition();
     }
 
     private String getRoomDescription(Room room) {
@@ -620,7 +620,7 @@ public class Game {
         };
     }
 
-    private void mostrarMiniMapa() {
+    private void showMinimap() {
         Render.clearScreen();
         System.out.println("╔════════════════════════════════╗");
         System.out.println("║   MINIMAP - Floor " + dungeon.getCurrentFloorNumber() + "          ║");
@@ -664,144 +664,144 @@ public class Game {
         System.out.println("Press any key to close...");
     }
 
-    private void verificarBau(Room room) {
-        Position pos = jogador.position();
+    private void checkChest(Room room) {
+        Position pos = player.position();
 
         for (Chest chest : room.chests()) {
-            if (!chest.isOpened() && colidem(pos, chest.position())) {
+            if (!chest.isOpened() && collide(pos, chest.position())) {
                 currentChest = chest;
                 showingChestLoot = true;
-                log.adicionar("Looting " + chest.corpseName() + "...");
+                log.add("Looting " + chest.corpseName() + "...");
                 return;
             }
         }
 
-        log.adicionar("No corpse nearby.");
+        log.add("No corpse nearby.");
     }
 
-    private void processarCombate(char tecla) {
-        switch (tecla) {
-            case '1' -> ataqueBasico();
-            case '2' -> ataquePoderoso();
-            case '3' -> magiaFogo();
-            case 'r' -> tentarFugir();
+    private void processCombat(char key) {
+        switch (key) {
+            case '1' -> basicAttack();
+            case '2' -> powerAttack();
+            case '3' -> fireSpell();
+            case 'r' -> tryEscape();
         }
     }
 
-    private void ataqueBasico() {
-        int dano = jogador.atacar();
-        boolean wasCrit = Math.random() < jogador.stats().criticalChance();
+    private void basicAttack() {
+        int damage = player.attack();
+        boolean wasCrit = Math.random() < player.stats().criticalChance();
 
-        inimigoAtual.receberDano(dano);
+        currentEnemy.takeDamage(damage);
 
         String critText = wasCrit ? " CRITICAL!" : "";
-        log.adicionar(String.format("You attack %s for %d damage!%s",
-                inimigoAtual.nome(), dano, critText));
+        log.add(String.format("You attack %s for %d damage!%s",
+                currentEnemy.name(), damage, critText));
 
-        if (verificarMorteInimigo())
+        if (checkEnemyDeath())
             return;
-        turnoInimigo();
+        enemyTurn();
     }
 
-    private void ataquePoderoso() {
-        int custoMana = 5;
-        if (!jogador.usarMana(custoMana)) {
-            log.adicionar("Not enough mana!");
+    private void powerAttack() {
+        int manaCost = 5;
+        if (!player.spendMana(manaCost)) {
+            log.add("Not enough mana!");
             return;
         }
 
-        int dano = (int) (jogador.atacar() * 1.5);
-        inimigoAtual.receberDano(dano);
-        log.adicionar(String.format("Power Attack! %d damage!", dano));
+        int damage = (int) (player.attack() * 1.5);
+        currentEnemy.takeDamage(damage);
+        log.add(String.format("Power Attack! %d damage!", damage));
 
-        if (verificarMorteInimigo())
+        if (checkEnemyDeath())
             return;
-        turnoInimigo();
+        enemyTurn();
     }
 
-    private void magiaFogo() {
-        int custoMana = 8;
-        if (!jogador.usarMana(custoMana)) {
-            log.adicionar("Not enough mana!");
+    private void fireSpell() {
+        int manaCost = 8;
+        if (!player.spendMana(manaCost)) {
+            log.add("Not enough mana!");
             return;
         }
 
-        int dano = 10 + (int) (Math.random() * 5);
-        inimigoAtual.receberDano(dano);
-        log.adicionar(String.format("Fireball! %d damage!", dano));
+        int damage = 10 + (int) (Math.random() * 5);
+        currentEnemy.takeDamage(damage);
+        log.add(String.format("Fireball! %d damage!", damage));
 
-        if (verificarMorteInimigo())
+        if (checkEnemyDeath())
             return;
-        turnoInimigo();
+        enemyTurn();
     }
 
-    private void tentarFugir() {
+    private void tryEscape() {
         if (Math.random() < 0.5) {
-            log.adicionar("You fled from combat!");
-            emCombate = false;
-            inimigoAtual = null;
-            jogador.mover(-3, 0, dungeon.getCurrentLevel().getCurrentRoom().mapa());
+            log.add("You fled from combat!");
+            inCombat = false;
+            currentEnemy = null;
+            player.move(-3, 0, dungeon.getCurrentLevel().getCurrentRoom().mapa());
         } else {
-            log.adicionar("You failed to escape!");
-            turnoInimigo();
+            log.add("You failed to escape!");
+            enemyTurn();
         }
     }
 
-    private void turnoInimigo() {
-        int hpBefore = jogador.hpAtual();
-        int dano = inimigoAtual.atacar();
-        jogador.receberDano(dano);
+    private void enemyTurn() {
+        int hpBefore = player.currentHp();
+        int damage = currentEnemy.attack();
+        player.takeDamage(damage);
 
-        if (jogador.hpAtual() == hpBefore) {
-            log.adicionar("You evaded the attack!");
+        if (player.currentHp() == hpBefore) {
+            log.add("You evaded the attack!");
         } else {
-            log.adicionar(String.format("%s attacks you for %d damage!",
-                    inimigoAtual.nome(), dano));
+            log.add(String.format("%s attacks you for %d damage!",
+                    currentEnemy.name(), damage));
         }
 
-        if (!jogador.vivo()) {
-            log.adicionar("You were defeated...");
+        if (!player.alive()) {
+            log.add("You were defeated...");
         }
     }
 
-    private boolean verificarMorteInimigo() {
+    private boolean checkEnemyDeath() {
         Room currentRoom = dungeon.getCurrentLevel().getCurrentRoom();
 
-        if (!inimigoAtual.vivo()) {
-            int xpGanho = 10 * dungeon.getCurrentFloorNumber();
-            jogador.ganharXP(xpGanho);
-            log.adicionar(String.format("%s defeated! +%d XP",
-                    inimigoAtual.nome(), xpGanho));
+        if (!currentEnemy.alive()) {
+            int xpGained = 10 * dungeon.getCurrentFloorNumber();
+            player.gainXp(xpGained);
+            log.add(String.format("%s defeated! +%d XP",
+                    currentEnemy.name(), xpGained));
 
-            Chest newChest = new Chest(inimigoAtual.position(), dungeon.getCurrentFloorNumber(),
-                    jogador.stats().lootBonus(), inimigoAtual.nome());
+            Chest newChest = new Chest(currentEnemy.position(), dungeon.getCurrentFloorNumber(),
+                    player.stats().lootBonus(), currentEnemy.name());
             currentRoom.chests().add(newChest);
-            log.adicionar("Enemy left a corpse! Press [E] to loot");
+            log.add("Enemy left a corpse! Press [E] to loot");
 
-            emCombate = false;
-            inimigoAtual = null;
+            inCombat = false;
+            currentEnemy = null;
             return true;
         }
         return false;
     }
 
-    private void verificarColisao(Room room) {
-        Position pj = jogador.position();
+    private void checkCollision(Room room) {
+        Position pj = player.position();
 
-        for (Monstro monstro : room.monstros()) {
-            if (monstro.vivo() && colidem(pj, monstro.position())) {
-                emCombate = true;
-                inimigoAtual = monstro;
-                log.adicionar("You encountered a " + monstro.nome() + "!");
-                log.adicionar("=== COMBAT ===");
-                log.adicionar("[1] Basic Attack  [2] Power Attack (5 MP)");
-                log.adicionar("[3] Fireball (8 MP)  [R] Run");
+        for (Monster monster : room.monstros()) {
+            if (monster.alive() && collide(pj, monster.position())) {
+                inCombat = true;
+                currentEnemy = monster;
+                log.add("You encountered a " + monster.name() + "!");
+                log.add("=== COMBAT ===");
+                log.add("[1] Basic Attack  [2] Power Attack (5 MP)");
+                log.add("[3] Fireball (8 MP)  [R] Run");
                 break;
             }
         }
     }
 
-    private boolean colidem(Position p1, Position p2) {
+    private boolean collide(Position p1, Position p2) {
         return Math.abs(p1.x() - p2.x()) < 2 && Math.abs(p1.y() - p2.y()) < 2;
     }
 
@@ -813,7 +813,7 @@ public class Game {
         System.out.println("╚════════════════════════════════╝");
         System.out.println();
         System.out.println("Floor reached: " + dungeon.getCurrentFloorNumber());
-        System.out.println("Total XP: " + jogador.xp());
+        System.out.println("Total XP: " + player.xp());
         System.out.println();
         System.out.println("Press Q to quit...");
 

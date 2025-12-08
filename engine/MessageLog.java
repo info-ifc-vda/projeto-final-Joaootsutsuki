@@ -11,8 +11,8 @@ public class MessageLog {
         messages = new ArrayList<>();
     }
 
-    public void adicionar(String mensagem) {
-        messages.add(mensagem);
+    public void add(String message) {
+        messages.add(message);
         if (messages.size() > MAX_MESSAGES) {
             messages.remove(0);
         }
@@ -22,7 +22,7 @@ public class MessageLog {
         return messages;
     }
 
-    public void limpar() {
+    public void clear() {
         messages.clear();
     }
 }
