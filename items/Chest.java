@@ -26,12 +26,10 @@ public class Chest {
             weapons.add(Weapon.generateRandom(floorLevel, luckBonus, rand));
         }
 
-        // sprite do corpo
-        String GRAY = "\u001B[90m";
+        String YELLOW = "\u001B[33m";
         String RESET = "\u001B[0m";
         this.sprite = new String[][] {
-                { GRAY + "☠" + RESET, GRAY + "☠" + RESET },
-                { GRAY + "☠" + RESET, GRAY + "☠" + RESET }
+                { YELLOW + "▤" + RESET},
         };
     }
 
