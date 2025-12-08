@@ -1,14 +1,12 @@
 package entidades;
 
-// sistema de stats igual dark souls xd
-
 public class Stats {
     private int vitality; // HP
-    private int endurance; // peso
-    private int strength; // escala com armas pesadas
-    private int dexterity; // escala com armas leves
-    private int intelligence; // escala com armas magicas (cajado)
-    private int luck; // afeta chance-based stats
+    private int endurance; // carry weight
+    private int strength; // heavy weapons scaling
+    private int dexterity; // light weapons scaling
+    private int intelligence; // magic weapons scaling
+    private int luck; // chance-based stats
 
     public Stats(int vit, int end, int str, int dex, int intel, int lck) {
         this.vitality = vit;
@@ -19,7 +17,6 @@ public class Stats {
         this.luck = lck;
     }
 
-    // Getters
     public int vitality() {
         return vitality;
     }
@@ -44,7 +41,6 @@ public class Stats {
         return luck;
     }
 
-    // setters pra level up
     public void addVitality(int amount) {
         vitality += amount;
     }
@@ -69,8 +65,7 @@ public class Stats {
         luck += amount;
     }
 
-    // derived stats
-    public int maxHP() {
+    public int maxHp() {
         return 30 + (vitality * 5);
     }
 
@@ -79,14 +74,14 @@ public class Stats {
     }
 
     public double evasionChance() {
-        return Math.min(0.3, luck * 0.02); // max 30% evasion
+        return Math.min(0.3, luck * 0.02);
     }
 
     public double criticalChance() {
-        return Math.min(0.25, luck * 0.015); // max 25% crit
+        return Math.min(0.25, luck * 0.015);
     }
 
     public int lootBonus() {
-        return luck / 5; // better loot quality
+        return luck / 5;
     }
 }

@@ -4,41 +4,39 @@ import mundo.Position;
 import items.Inventory;
 import items.Weapon;
 
-public class Jogador extends Entidade {
-    private int manaMax;
-    private int manaAtual;
-    private int nivel;
+public class Player extends Entity {
+    private int maxMana;
+    private int currentMana;
+    private int level;
     private int xp;
     private Inventory inventory;
     private Stats stats;
 
-    public Jogador(String nome, Position position) {
-        super(nome, new String[][] {{"@"}}, position, 35, 5, 2); // base HP will be overridden by stats
+    public Player(String name, Position position) {
+        super(name, new String[][] { { "@" } }, position, 35, 5, 2);
 
-        // starting stats (like Dark Souls deprived class)
         this.stats = new Stats(10, 10, 10, 10, 10, 10);
 
-        // recalculate HP based on vitality
-        this.hpMax = stats.maxHP();
-        this.hpAtual = this.hpMax;
+        this.maxHp = stats.maxHp();
+        this.currentHp = this.maxHp;
 
-        this.manaMax = 20;
-        this.manaAtual = 20;
-        this.nivel = 1;
+        this.maxMana = 20;
+        this.currentMana = 20;
+        this.level = 1;
         this.xp = 0;
         this.inventory = new Inventory();
     }
 
-    public int manaMax() {
-        return manaMax;
+    public int maxMana() {
+        return maxMana;
     }
 
-    public int manaAtual() {
-        return manaAtual;
+    public int currentMana() {
+        return currentMana;
     }
 
-    public int nivel() {
-        return nivel;
+    public int level() {
+        return level;
     }
 
     public int xp() {
@@ -53,23 +51,22 @@ public class Jogador extends Entidade {
         return stats;
     }
 
-    public boolean usarMana(int custo) {
-        if (manaAtual >= custo) {
-            manaAtual -= custo;
+    public boolean spendMana(int cost) {
+        if (currentMana >= cost) {
+            currentMana -= cost;
             return true;
         }
         return false;
     }
 
-    public void ganharXP(int quantidade) {
-        xp += quantidade;
+    public void gainXp(int amount) {
+        xp += amount;
     }
 
     @Override
-    public int atacar() {
-        int baseAttack = ataque;
+    public int attack() {
+        int baseAttack = attack;
 
-        // add weapon damage with stat scaling
         if (inventory.getEquippedWeapon() != null) {
             Weapon weapon = inventory.getEquippedWeapon();
             int weaponDamage = weapon.getDamageWithStats(
@@ -79,10 +76,8 @@ public class Jogador extends Entidade {
             baseAttack += weaponDamage;
         }
 
-        // add some randomness
         baseAttack += (int) (Math.random() * 3) - 1;
 
-        // critical hit chance based on luck
         if (Math.random() < stats.criticalChance()) {
             baseAttack = (int) (baseAttack * 1.5);
         }
@@ -91,13 +86,10 @@ public class Jogador extends Entidade {
     }
 
     @Override
-    public void receberDano(int dano) {
-        // evasion chance based on luck
+    public void takeDamage(int damage) {
         if (Math.random() < stats.evasionChance()) {
-            // evaded!
             return;
         }
-
-        super.receberDano(dano);
+        super.takeDamage(damage);
     }
 }

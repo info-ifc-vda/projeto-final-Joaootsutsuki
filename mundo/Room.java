@@ -1,13 +1,13 @@
 package mundo;
 
-import entidades.Monstro;
+import entidades.Monster;
 import items.Chest;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Room {
-    private Mapa mapa;
-    private List<Monstro> monstros;
+    private Map mapa;
+    private List<Monster> monstros;
     private List<Chest> chests;
     private boolean discovered;
     private boolean cleared;
@@ -48,7 +48,7 @@ public class Room {
 
     public void generateMap() {
         // Generate map with doors already placed
-        mapa = new Mapa(60, 30, hasNorthDoor, hasSouthDoor, hasEastDoor, hasWestDoor);
+        mapa = new Map(60, 30, hasNorthDoor, hasSouthDoor, hasEastDoor, hasWestDoor);
     }
 
     public void setDoor(String direction, boolean value) {
@@ -61,11 +61,11 @@ public class Room {
     }
 
     // Getters
-    public Mapa mapa() {
+    public Map mapa() {
         return mapa;
     }
 
-    public List<Monstro> monstros() {
+    public List<Monster> monstros() {
         return monstros;
     }
 
@@ -128,8 +128,8 @@ public class Room {
 
     public void checkCleared() {
         boolean allDead = true;
-        for (Monstro m : monstros) {
-            if (m.vivo()) {
+        for (Monster m : monstros) {
+            if (m.alive()) {
                 allDead = false;
                 break;
             }
