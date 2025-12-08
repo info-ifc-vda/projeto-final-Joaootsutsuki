@@ -175,10 +175,10 @@ public class RoomManager {
 
     public String getRoomDescription(Room room) {
         return switch (room.type()) {
-            case START -> "the starting room";
-            case BOSS -> "a BOSS ROOM!";
-            case TREASURE -> "a treasure room";
-            default -> room.cleared() ? "a cleared room" : "a new room";
+            case START -> "Sala Inicial";
+            case BOSS -> "Sala do BOSS!!";
+            case TREASURE -> "Sala de tesouros";
+            default -> room.cleared() ? "Uma sala vazia" : "uma nova sala";
         };
     }
 }

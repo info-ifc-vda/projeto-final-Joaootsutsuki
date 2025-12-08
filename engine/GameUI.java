@@ -10,14 +10,14 @@ public class GameUI {
 
     public void showInventory(Player player) {
         System.out.println("╔══════════════════════════════════════════════════════════════╗");
-        System.out.println("║                         INVENTORY                            ║");
+        System.out.println("║                         INVENTARIO                           ║");
         System.out.println("╚══════════════════════════════════════════════════════════════╝");
         System.out.println();
 
         if (player.inventory().size() == 0) {
-            System.out.println("  Your inventory is empty.");
+            System.out.println("  Seu inventario esta vazio.");
         } else {
-            System.out.println("  Press number to equip weapon, [I] to close");
+            System.out.println("  Pressione um numero para equipar a arma, [I] para fechar");
             System.out.println();
 
             List<Weapon> weapons = player.inventory().getWeapons();
@@ -25,7 +25,7 @@ public class GameUI {
 
             for (int i = 0; i < weapons.size(); i++) {
                 Weapon w = weapons.get(i);
-                String equipMark = (w == equipped) ? " [EQUIPPED]" : "";
+                String equipMark = (w == equipped) ? " [Equipado]" : "";
                 String color = getRarityColor(w.rarity());
 
                 int actualDamage = w.getDamageWithStats(
@@ -55,7 +55,7 @@ public class GameUI {
         );
         System.out.println("╚══════════════════════════════════════════════════════════════╝");
         System.out.println();
-        System.out.println("  Press number to take weapon, [E] to close");
+        System.out.println("  Pressione um numero para pegar uma arma, [E] para fechar");
         System.out.println();
 
         List<Weapon> weapons = chest.weapons();
@@ -69,7 +69,7 @@ public class GameUI {
 
         System.out.println();
         System.out.println("─".repeat(64));
-        System.out.printf("Inventory: %d/20 | Weight: %.1f/%d\n",
+        System.out.printf("Inventario: %d/20 | Peso: %.1f/%d\n",
                 player.inventory().size(),
                 player.inventory().getCurrentWeight(),
                 player.stats().maxCarryWeight());
@@ -77,60 +77,71 @@ public class GameUI {
 
     public void showMinimap(Dungeon dungeon) {
         Render.clearScreen();
-        System.out.println("╔════════════════════════════════╗");
-        System.out.println("║   MINIMAP - Floor " + dungeon.getCurrentFloorNumber() + "          ║");
-        System.out.println("╚════════════════════════════════╝");
-        System.out.println();
+        System.out.println("╔══════════════════════════════════════════════════════╗");
+        System.out.printf ("║                 MINIMAPA - ANDAR %02d                ║\n", dungeon.getCurrentFloorNumber());
+        System.out.println("╚══════════════════════════════════════════════════════╝\n");
 
         DungeonLevel level = dungeon.getCurrentLevel();
         Room[][] grid = level.roomGrid();
         int size = level.gridSize();
 
         for (int y = 0; y < size; y++) {
+            System.out.print("   ");
+
             for (int x = 0; x < size; x++) {
                 Room room = grid[y][x];
 
                 if (x == level.currentRoomX() && y == level.currentRoomY()) {
-                    System.out.print(" @@ ");
+                    System.out.print(" [\u001B[32m@\u001B[0m]");
                 } else if (room == null) {
-                    System.out.print(" .. ");
+                    System.out.print(" [ ]");
                 } else if (!room.discovered()) {
-                    System.out.print(" ?? ");
+                    System.out.print(" [?]");
                 } else {
                     String symbol = switch (room.type()) {
-                        case START -> " SS ";
-                        case BOSS -> " BB ";
-                        case TREASURE -> " TT ";
-                        default -> room.cleared() ? " -- " : " ## ";
+                        case START -> "S";
+                        case BOSS -> "\u001B[31mB\u001B[0m";
+                        case TREASURE -> "\u001B[33mT\u001B[0m";
+                        default -> room.cleared() ? "-" : "#";
                     };
-                    System.out.print(symbol);
+                    System.out.print(" [" + symbol + "]");
                 }
             }
             System.out.println();
         }
 
-        System.out.println();
-        System.out.println("Floor: " + dungeon.getCurrentFloorNumber() +
-                "/" + dungeon.getTotalFloorsGenerated());
-        System.out.println();
-        System.out.println("Legend: @@ You | SS Start | BB Boss | TT Treasure");
-        System.out.println("        ## Enemies | -- Cleared | ?? Undiscovered");
-        System.out.println("        ↑ Stairs Up | ↓ Stairs Down");
-        System.out.println();
-        System.out.println("Press any key to close...");
+        System.out.println("\n─────────────────────────── INFO ─────────────────────────────\n");
+
+        System.out.printf(" Andar atual: %d/%d\n", dungeon.getCurrentFloorNumber(), dungeon.getTotalFloorsGenerated());
+
+        System.out.println("\n──────────────────────── LEGENDA ─────────────────────────────");
+        System.out.println(" [\u001B[32m@\u001B[0m] Você");
+        System.out.println(" [S] Início");
+        System.out.println(" [\u001B[31mB\u001B[0m] Chefe");
+        System.out.println(" [#] Inimigos");
+        System.out.println(" [-] Sala Limpa");
+        System.out.println(" [#] Inimigos");
+        System.out.println(" [\u001B[33mT\u001B[0m] Tesouro");
+        System.out.println(" [?] Não descoberto");
+        System.out.println(" [ ] Sem sala gerada");
+        System.out.println(" ↑ Escada Cima | ↓ Escada Baixo");
+        System.out.println("──────────────────────────────────────────────────────────────\n");
+
+        System.out.print(" Pressione qualquer tecla para fechar...");
     }
+
 
     public void showGameOver(Player player, int currentFloor) {
         Render.clearScreen();
         System.out.println();
         System.out.println("╔════════════════════════════════╗");
-        System.out.println("║        YOU DIED!               ║");
+        System.out.println("║         VOCE MORREU            ║");
         System.out.println("╚════════════════════════════════╝");
         System.out.println();
-        System.out.println("Floor reached: " + currentFloor);
-        System.out.println("Total XP: " + player.xp());
+        System.out.println("Andar alcançado: " + currentFloor);
+        System.out.println("XP total: " + player.xp());
         System.out.println();
-        System.out.println("Press Q to quit...");
+        System.out.println("Pressione Q para sair...");
     }
 
     private String getRarityColor(String rarity) {

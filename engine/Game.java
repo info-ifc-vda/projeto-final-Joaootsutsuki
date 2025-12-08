@@ -53,8 +53,8 @@ public class Game {
     }
 
     private void showWelcomeMessage() {
-        log.add("You enter the dungeon...");
-        log.add("Press [I] inventory, [E] interact, [M] minimap");
+        log.add("Voce entrou em uma dungeon...");
+        log.add("Precione [I] Inventario, [E] Interagir, [M] Minimapa");
     }
 
     private void gameLoop() {
@@ -132,7 +132,7 @@ public class Game {
     private void handleError(Exception e) {
         System.err.println("ERROR: " + e.getMessage());
         e.printStackTrace();
-        System.err.println("Press any key to continue...");
+        System.err.println("Precione qualquer tecla para continuar...");
         Input.getKey();
     }
 

@@ -16,7 +16,7 @@ public class Chest {
         this.position = position;
         this.opened = false;
         this.weapons = new ArrayList<>();
-        this.corpseName = monsterName + "'s Corpse";
+        this.corpseName = "Cadaver do " + monsterName;
 
         // gerar 3-5 armas random (afetado por luck)
         Random rand = new Random();

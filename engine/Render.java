@@ -100,7 +100,7 @@ public class Render {
         }
 
         if (!hasEnemy) {
-            sb.append("No living enemies\n");
+            sb.append("Sem inimigos vivos.\n");
         }
 
         return sb.toString();

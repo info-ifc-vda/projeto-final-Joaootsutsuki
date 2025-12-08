@@ -46,7 +46,7 @@ public class InputHandler {
             int index = key - '1';
             if (index < player.inventory().size()) {
                 player.inventory().equipWeapon(index);
-                log.add("Equipped: " + player.inventory().getEquippedWeapon().name());
+                log.add("Equipou: " + player.inventory().getEquippedWeapon().name());
             }
         }
     }
@@ -65,13 +65,13 @@ public class InputHandler {
                 Weapon toTake = currentChest.weapons().get(index);
 
                 if (player.inventory().isFull()) {
-                    log.add("Inventory is full!");
+                    log.add("Inventario cheio!");
                 } else if (player.inventory().getCurrentWeight() + toTake.weight() > maxWeight) {
-                    log.add("Too heavy! Need more endurance");
+                    log.add("Peso excedido! Precisa mais resistencia");
                 } else {
                     Weapon taken = currentChest.weapons().remove(index);
                     player.inventory().addWeapon(taken, maxWeight);
-                    log.add("Took: " + taken.name());
+                    log.add("Pegou: " + taken.name());
 
                     if (currentChest.weapons().isEmpty()) {
                         currentChest.open();
@@ -114,7 +114,7 @@ public class InputHandler {
             }
         }
 
-        // Check if player actually moved
+        // confere se realmente se moveu
         if (player.position().x() != oldX || player.position().y() != oldY) {
             currentRoom.checkCleared();
         }
@@ -127,12 +127,12 @@ public class InputHandler {
             if (!chest.isOpened() && collide(pos, chest.position())) {
                 currentChest = chest;
                 showingChestLoot = true;
-                log.add("Looting " + chest.corpseName() + "...");
+                log.add("Vasculhando " + chest.corpseName() + "...");
                 return;
             }
         }
 
-        log.add("No corpse nearby.");
+        log.add("Nenhum corpo proximo.");
     }
 
     private boolean collide(Position p1, Position p2) {
