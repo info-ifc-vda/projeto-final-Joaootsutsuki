@@ -7,14 +7,14 @@ public class DungeonLevel {
     private int gridSize;
     private int currentRoomX;
     private int currentRoomY;
-    private int floorNumber;
     private Random rand;
+    private int floorNumber;
 
     public DungeonLevel(int floorNumber) {
-        this.floorNumber = floorNumber;
-        this.gridSize = 5; // 5x5 grid of rooms
+        this.gridSize = 5;
         this.roomGrid = new Room[gridSize][gridSize];
         this.rand = new Random();
+        this.floorNumber = floorNumber;
 
         generateDungeon();
     }
@@ -26,10 +26,9 @@ public class DungeonLevel {
 
         // Create starting room
         roomGrid[currentRoomY][currentRoomX] = new Room(Room.RoomType.START);
-        // DON'T set discovered here - let the game do it
 
         // Generate connected rooms using random walk
-        int roomsToGenerate = 8 + rand.nextInt(5); // 8-12 rooms
+        int roomsToGenerate = 8 + rand.nextInt(5);
         int roomsCreated = 1;
 
         int x = currentRoomX;
@@ -42,10 +41,10 @@ public class DungeonLevel {
             int newY = y;
 
             switch (dir) {
-                case 0 -> newY--; // North
-                case 1 -> newY++; // South
-                case 2 -> newX++; // East
-                case 3 -> newX--; // West
+                case 0 -> newY--;
+                case 1 -> newY++;
+                case 2 -> newX++;
+                case 3 -> newX--;
             }
 
             // Check bounds
@@ -94,16 +93,16 @@ public class DungeonLevel {
             return;
 
         // Determine direction
-        if (y2 < y1) { // North
+        if (y2 < y1) {
             room1.setDoor("north", true);
             room2.setDoor("south", true);
-        } else if (y2 > y1) { // South
+        } else if (y2 > y1) {
             room1.setDoor("south", true);
             room2.setDoor("north", true);
-        } else if (x2 > x1) { // East
+        } else if (x2 > x1) {
             room1.setDoor("east", true);
             room2.setDoor("west", true);
-        } else if (x2 < x1) { // West
+        } else if (x2 < x1) {
             room1.setDoor("west", true);
             room2.setDoor("east", true);
         }
@@ -136,33 +135,25 @@ public class DungeonLevel {
     public void moveNorth() {
         if (canMoveNorth()) {
             currentRoomY--;
-            // DON'T set discovered here 
         }
     }
 
     public void moveSouth() {
         if (canMoveSouth()) {
             currentRoomY++;
-            // DON'T set discovered here 
         }
     }
 
     public void moveEast() {
         if (canMoveEast()) {
             currentRoomX++;
-            // DON'T set discovered here 
         }
     }
 
     public void moveWest() {
         if (canMoveWest()) {
             currentRoomX--;
-            // DON'T set discovered here 
         }
-    }
-
-    public int floorNumber() {
-        return floorNumber;
     }
 
     public int currentRoomX() {

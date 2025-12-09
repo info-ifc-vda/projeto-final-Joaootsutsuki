@@ -71,64 +71,6 @@ public class NavigationManager {
         }
     }
 
-    public void checkStairs() {
-        Position pos = player.position();
-        Room currentRoom = dungeon.getCurrentLevel().getCurrentRoom();
-        Map map = currentRoom.mapa();
-
-        for (int dy = 0; dy < 2; dy++) {
-            for (int dx = 0; dx < 2; dx++) {
-                int checkX = pos.x() + dx;
-                int checkY = pos.y() + dy;
-
-                if (map.isStairs(checkX, checkY)) {
-                    Tile stairsType = map.getStairsType(checkX, checkY);
-
-                    if (stairsType == Tile.STAIRS_DOWN) {
-                        descendFloor();
-                    } else if (stairsType == Tile.STAIRS_UP) {
-                        ascendFloor();
-                    }
-
-                    return;
-                }
-            }
-        }
-    }
-
-    private void descendFloor() {
-        dungeon.descendFloor();
-        log.clear();
-        log.add("Descended to Floor " + dungeon.getCurrentFloorNumber());
-
-        Room newRoom = dungeon.getCurrentLevel().getCurrentRoom();
-        if (!newRoom.discovered()) {
-            roomManager.setupRoom(newRoom);
-            roomManager.spawnMonstersInRoom(newRoom, dungeon.getCurrentFloorNumber(), player);
-        }
-
-        Position newPos = newRoom.mapa().randomPosition();
-        player.move(
-                newPos.x() - player.position().x(),
-                newPos.y() - player.position().y(),
-                newRoom.mapa()
-        );
-    }
-
-    private void ascendFloor() {
-        dungeon.ascendFloor();
-        log.clear();
-        log.add("Ascended to Floor " + dungeon.getCurrentFloorNumber());
-
-        Room oldRoom = dungeon.getCurrentLevel().getCurrentRoom();
-        Position returnPos = oldRoom.mapa().randomPosition();
-        player.move(
-                returnPos.x() - player.position().x(),
-                returnPos.y() - player.position().y(),
-                oldRoom.mapa()
-        );
-    }
-
     public void checkRoomTransition() {
         Position pos = player.position();
         Room currentRoom = dungeon.getCurrentLevel().getCurrentRoom();

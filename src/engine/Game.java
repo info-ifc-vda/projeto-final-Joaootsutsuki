@@ -106,7 +106,7 @@ public class Game {
             combatManager.processCombat(
                     key,
                     currentRoom,
-                    dungeon.getCurrentFloorNumber()
+                    0
             );
         } else {
             handleMovement(key);
@@ -123,7 +123,6 @@ public class Game {
         // Only check for interactions if player actually moved
         if (player.position().x() != oldX || player.position().y() != oldY) {
             navigationManager.checkForRoomChange();
-            navigationManager.checkStairs();
             navigationManager.checkRoomTransition();
             collisionDetector.checkCollision(currentRoom);
         }
@@ -137,7 +136,7 @@ public class Game {
     }
 
     private void gameOver() {
-        gameUI.showGameOver(player, dungeon.getCurrentFloorNumber());
+        gameUI.showGameOver(player, 0);
 
         while (Input.getKey() != 'q');
         Input.cleanup();
