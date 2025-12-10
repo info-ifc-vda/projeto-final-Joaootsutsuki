@@ -178,7 +178,7 @@ public class RoomManager {
             case START -> "Sala Inicial";
             case BOSS -> "Sala do BOSS!!";
             case TREASURE -> "Sala de tesouros";
-            default -> room.cleared() ? "Uma sala vazia" : "uma nova sala";
+            default -> room.cleared() ? "sala vazia" : "nova sala";
         };
     }
 }

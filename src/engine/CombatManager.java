@@ -24,10 +24,17 @@ public class CombatManager {
     public void startCombat(Monster enemy) {
         this.inCombat = true;
         this.currentEnemy = enemy;
-        log.add("Você encontrou um " + enemy.name() + "!");
-        log.add("=== COMBATE ===");
-        log.add("[1] Ataque Basico  [2] Ataque Poderoso (5 MP)");
-        log.add("[3] Bola de Fogo (8 MP)  [R] Fugir");
+
+        log.clearNonFixed();
+        log.add(String.format("⚔️  Você encontrou %s! Prepare-se!", enemy.name()));
+
+        log.addFixed("═════════════════════ COMBATE ═════════════════════");
+        log.addFixed(" 🎯 Ações disponíveis:");
+        log.addFixed("   [1] Ataque Básico");
+        log.addFixed("   [2] Ataque Poderoso (5 MP)");
+        log.addFixed("   [3] Bola de Fogo (8 MP)");
+        log.addFixed("   [R] Fugir");
+        log.addFixed("════════════════════════════════════════════════════");
     }
 
     public void processCombat(char key, Room currentRoom, int currentFloor) {
@@ -45,9 +52,10 @@ public class CombatManager {
 
         currentEnemy.takeDamage(damage);
 
-        String critText = wasCrit ? " CRÍTICO!" : "";
-        log.add(String.format("Voce atacou %s causando %d de dano!%s",
-                currentEnemy.name(), damage, critText));
+        if (wasCrit)
+            log.add(String.format("🗡️ Ataque Crítico! %s sofreu %d de dano!", currentEnemy.name(), damage));
+        else
+            log.add(String.format("🗡️ Você atacou %s causando %d de dano.", currentEnemy.name(), damage));
 
         if (checkEnemyDeath(room, floor)) return;
         enemyTurn();
@@ -56,13 +64,14 @@ public class CombatManager {
     private void powerAttack(Room room, int floor) {
         int manaCost = 5;
         if (!player.spendMana(manaCost)) {
-            log.add("Mana insuficiente!");
+            log.add("❌ Mana insuficiente para Ataque Poderoso!");
             return;
         }
 
         int damage = (int) (player.attack() * 1.5);
         currentEnemy.takeDamage(damage);
-        log.add(String.format("Ataque Poderoso! %d de dano!", damage));
+
+        log.add(String.format("⚡ Ataque Poderoso! %s recebeu %d de dano!", currentEnemy.name(), damage));
 
         if (checkEnemyDeath(room, floor)) return;
         enemyTurn();
@@ -71,13 +80,14 @@ public class CombatManager {
     private void fireSpell(Room room, int floor) {
         int manaCost = 8;
         if (!player.spendMana(manaCost)) {
-            log.add("Mana insuficiente!");
+            log.add("❌ Mana insuficiente para lançar Bola de Fogo!");
             return;
         }
 
         int damage = 10 + (int) (Math.random() * 5);
         currentEnemy.takeDamage(damage);
-        log.add(String.format("Bola de Fogo! %d de dano!", damage));
+
+        log.add(String.format("🔥 Você lançou Bola de Fogo! %s sofreu %d de dano!", currentEnemy.name(), damage));
 
         if (checkEnemyDeath(room, floor)) return;
         enemyTurn();
@@ -85,11 +95,11 @@ public class CombatManager {
 
     private void tryEscape() {
         if (Math.random() < 0.5) {
-            log.add("Voce fugiu do combate!");
+            log.add("🏃 Você conseguiu fugir do combate!");
             inCombat = false;
             currentEnemy = null;
         } else {
-            log.add("Voce falhou em escapar!");
+            log.add("⚠️ Você tentou fugir mas falhou!");
             enemyTurn();
         }
     }
@@ -99,24 +109,23 @@ public class CombatManager {
         int damage = currentEnemy.attack();
         player.takeDamage(damage);
 
-        if (player.currentHp() == hpBefore) {
-            log.add("Voce esquivou do ataque!");
-        } else {
-            log.add(String.format("%s atacou voce causando %d de dano!",
-                    currentEnemy.name(), damage));
-        }
+        if (player.currentHp() == hpBefore)
+            log.add("✨ Você esquivou do ataque inimigo!");
+        else
+            log.add(String.format("💢 %s atacou você causando %d de dano!", currentEnemy.name(), damage));
 
         if (!player.alive()) {
-            log.add("Voce foi derrotado...");
+            log.add("☠️ Você foi derrotado...");
         }
     }
 
     private boolean checkEnemyDeath(Room room, int floor) {
         if (!currentEnemy.alive()) {
+
             int xpGained = 10 * floor;
             player.gainXp(xpGained);
-            log.add(String.format("%s derrotado! +%d XP",
-                    currentEnemy.name(), xpGained));
+
+            log.add(String.format("🏆 %s foi derrotado! Você ganhou %d XP.", currentEnemy.name(), xpGained));
 
             Chest newChest = new Chest(
                     currentEnemy.position(),
@@ -125,7 +134,8 @@ public class CombatManager {
                     currentEnemy.name()
             );
             room.chests().add(newChest);
-            log.add("O inimigo deixou um corpo! Pressione [E] para saquear");
+
+            log.add("📦 O inimigo deixou um corpo. Pressione [E] para saquear.");
 
             inCombat = false;
             currentEnemy = null;

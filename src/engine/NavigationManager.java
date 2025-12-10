@@ -121,7 +121,7 @@ public class NavigationManager {
                 newMap
         );
 
-        log.add("Entered " + roomManager.getRoomDescription(newRoom));
+        log.add("Entrou na " + roomManager.getRoomDescription(newRoom));
     }
 
     /**
